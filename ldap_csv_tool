@@ -1,0 +1,117 @@
+require 'thor'
+require 'net/ldap'
+require 'csv'
+
+class LdapCli < Thor
+	
+	desc "add 'path/to/file.csv'",  "Add User entry in LDAP using CSV"
+	long_desc <<-LONGDESC
+		`ldap_csv_tool add ` To add the user entries in the LDAP using csv format.
+	 
+		You must specify the csv file path as a parameter.
+		
+		CSV file must conain the headers 'cn', 'sn', 'mail', 'uid'.
+		
+		eg:
+		$ ldap_csv_tool add "path/to/file.csv"
+	LONGDESC
+	def add(csv_path)
+		
+		# Authentication
+		ldap_auth = Net::LDAP.new :host => "localhost",
+			:port => 1300,
+			:auth => {
+				:method => :simple,
+				:username => "cn=admin, dc=example, dc=org",
+				:password => "admin"
+		}
+		
+		# Read CSV File
+		records = CSV.read(csv_path, headers: true)
+
+		# Loop records and add Users
+		success_entries = 0
+		error_entries = 0
+		records.each do |row, index|
+			
+			dn = "cn=#{row["cn"]}, ou=people, dc=example, dc=org"
+			attr = {
+				:cn => row["cn"],
+				:objectclass => ["inetorgperson"],
+				:sn => row["sn"],
+				:mail => row["mail"],
+				:uid => row["uid"]
+			}
+			
+			ldap_auth.open do |ldap|
+				add_ldap = ldap.add(:dn => dn, :attributes => attr)
+				result = ldap.get_operation_result
+				if (add_ldap)
+					success_entries += 1
+					p "Record #{attr[:cn]}: #{result.code} => #{result.message}"
+				else
+					error_entries += 1
+					p "Record #{attr[:cn]}: #{result.code} => #{result.message}"
+				end
+			end
+			
+		end
+		
+		if success_entries > 0
+			p "Added #{success_entries} entries."
+		end
+		
+		if error_entries > 0
+			p "#{error_entries} entries failed"
+		end
+
+	end 
+
+	desc "search 'filter_query' 'path/to/output.csv'", "Search User in LDAP Directories"
+	long_desc <<-LONGDESC
+		`ldap_csv_tool search ` To search the user entries in the LDAP using filter query
+	 
+		You must specify the  Filter query ('uid=jane') and Ouput csv file path as a parameters.
+		
+		eg:
+		$ ldap_csv_tool search "uid=jane" "path/to/output_file.csv"
+	LONGDESC
+	def search(search_param, output_path)
+		
+		# Authentication
+		ldap_auth = Net::LDAP.new :host => "localhost",
+			:port => 1300,
+			:auth => {
+				:method => :simple,
+				:username => "cn=admin, dc=example, dc=org",
+				:password => "admin"
+		}
+
+		filter = Net::LDAP::Filter.from_rfc2254(search_param)
+		treebase = "dc=example, dc=org"
+		
+		row_data = []
+		
+		ldap_auth.search(:base => treebase, :filter => filter) do |entry|
+			entry.each do |attribute, values|
+				column_data = ""
+				values.each do |value|
+					column_data += "#{attribute}: #{value}"
+					puts "#{attribute}: #{value}"
+				end
+				row_data << [column_data]
+			end
+		end
+	    
+		CSV.open(output_path, "w") do |csv|
+			row_data.each do |row|
+				csv << row
+			end
+		end
+		
+		p "Exported to #{output_path}"
+	end
+    
+end
+
+LdapCli.start(ARGV)
