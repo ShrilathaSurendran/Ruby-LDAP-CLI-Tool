@@ -12,7 +12,7 @@ Require `net-ldap` gem - https://github.com/ruby-ldap/ruby-net-ldap
 # Steps
 1. To add the user entries in the LDAP using csv format. You must specify the csv file path as a parameter. CSV file must conain the headers "cn", "sn", "mail", "uid".
 
-    `ldap_csv_tool add path/to/file.csv`
+    `ruby ldap_csv_tool add path/to/file.csv`
    
    Example: users.csv contains 2 user informations given below. 
    
@@ -23,7 +23,7 @@ Require `net-ldap` gem - https://github.com/ruby-ldap/ruby-net-ldap
    `"George","Smith","george@example.org","george"`
    
    Command to add users:
-	 `$ ldap_csv_tool add "mycomputer/users.csv"`
+	 `$ ruby ldap_csv_tool add "mycomputer/users.csv"`
    
    Result: 
    
@@ -36,7 +36,7 @@ Require `net-ldap` gem - https://github.com/ruby-ldap/ruby-net-ldap
  
  2. To search the user entries in the LDAP directories. You must specify the Filter query and Ouput csv file path as a parameters.    
     Command to search users:
-	 `$ ldap_csv_tool search "uid=albert" "mycomputer/output.csv"`
+	 `$ ruby ldap_csv_tool search "uid=albert" "mycomputer/output.csv"`
    
     Result:
     
