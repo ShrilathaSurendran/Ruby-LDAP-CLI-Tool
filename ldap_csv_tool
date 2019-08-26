@@ -18,13 +18,7 @@ class LdapCli < Thor
 	def add(csv_path)
 		
 		# Authentication
-		ldap_auth = Net::LDAP.new :host => "localhost",
-			:port => 1300,
-			:auth => {
-				:method => :simple,
-				:username => "cn=admin, dc=example, dc=org",
-				:password => "admin"
-		}
+		ldap_auth = authentication
 		
 		# Read CSV File
 		records = CSV.read(csv_path, headers: true)
@@ -79,13 +73,7 @@ class LdapCli < Thor
 	def search(search_param, output_path)
 		
 		# Authentication
-		ldap_auth = Net::LDAP.new :host => "localhost",
-			:port => 1300,
-			:auth => {
-				:method => :simple,
-				:username => "cn=admin, dc=example, dc=org",
-				:password => "admin"
-		}
+		ldap_auth = authentication
 
 		filter = Net::LDAP::Filter.from_rfc2254(search_param)
 		treebase = "dc=example, dc=org"
@@ -111,7 +99,21 @@ class LdapCli < Thor
 		
 		p "Exported to #{output_path}"
 	end
-    
+	
+	no_commands do
+		def authentication
+			# Authentication
+			ldap_auth = Net::LDAP.new :host => "localhost",
+				:port => 1300,
+				:auth => {
+					:method => :simple,
+					:username => "cn=admin, dc=example, dc=org",
+					:password => "admin"
+			}
+			return ldap_auth
+		end
+	end
+	
 end
 
 LdapCli.start(ARGV)
